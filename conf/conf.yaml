@@ -1,0 +1,16 @@
+epochs: 210
+lr: 1e-2
+optimizer: 'sgd'
+momentum: 0.9
+weight_decay: 4e-5
+hydra:
+  run:
+    # to persuade hydra not to change folder
+    dir: ./
+pretrained: True
+resolution: 56
+output_dir: 'outputs'
+reg: 0.5
+train: True
+name: 'dct_resnet'
+save_dir: ./{output_dir}/experiment_namee={name}/opt={optimizer},wd={weight_decay},reg={reg},pretrained={pretrained},lr={lr},momentum={momentum}
