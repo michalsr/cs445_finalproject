@@ -37,7 +37,6 @@ File Overview:
  - stds.npy: numpy array that contains (y channel average standard deviation, cb channel average standard deviation, cr channel average standard deviation) after the discrete cosine transform for Tiny-Imagenet
  - stds_imagenette.npy: numpy array that contains (y channel average standard deviation, cb channel average standard deviation, cr channel average standard deviation) after the discrete cosine transform for Imagenette-160
  - stds_imagenette_320.npy: stds.npy: numpy array that contains (y channel average standard deviation, cb channel average standard deviation, cr channel average standard deviation) after the discrete cosine transform for Imagenette-320
- - frequencies.npy: array of number of times the different channels were activated in Imagenette-160
  - train.py: main training file for images in the frequency domain. To run:
     `python train.py`
  - train_list.json: Dictionary that contains the classes and the images from those classes that are part of the training set for Tiny-Imagenet
