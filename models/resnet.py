@@ -285,7 +285,6 @@ def resnet50(pretrained=False, progress=True, **kwargs):
 
     return model
 
-#based on https://github.com/calmevtime/DCTNet/blob/6a84f1ef63f4bf039eaa9df4bb4f27a20309e419/segmentation/mmdet/models/backbones/gate.py#L73
 class GateModule(nn.Module):
     def __init__(self):
         super(GateModule,self).__init__()
@@ -302,9 +301,7 @@ class GateModule(nn.Module):
         ch = self.conv_2(ch)
         #reshape for sampling
         ch = ch.reshape(ch.size(0),192,2,1)
-
         ch = torch.nn.functional.gumbel_softmax(ch,hard=True,dim=2)
-        #print(ch)
         #select channels to use and 0 out other ones
         x = x*ch[:,:,1].unsqueeze(2)
         return x, ch[:,:,1]
@@ -315,32 +312,25 @@ class dct_resnet(nn.Module):
         model = resnet50(pretrained=True)
         #Section 3.1 Figure 3: 'The three input layers are removed to...'
         self.model = nn.Sequential(*list(model.children()))[4:-1]
-        #change to 200 for tiny image net 
+        #change to 200 for tiny image net or 10 for imagenette
         self.fc = torch.nn.Linear(2048,10)
         self.relu = nn.ReLU(inplace=True)
         #we need to deconvolve cb and cr so we can concat with y
+        #lines 323-326 were taken from lines 397-407 from here: https://github.com/calmevtime/DCTNet/blob/master/classification/models/imagenet/resnet.py
         out_ch = self.model[0][0].conv1.out_channels
         self.model[0][0].conv1 = nn.Conv2d(192, out_ch, kernel_size=1, stride=1, bias=False)
-        #kaiming_init(self.model[0][0].conv1)
-
         out_ch = self.model[0][0].downsample[0].out_channels
         self.model[0][0].downsample[0] = nn.Conv2d(192, out_ch, kernel_size=1, stride=1, bias=False)
-
+        #only use the layer below if learning the deconvolution for the cr,cb channels 
         self.deconv = nn.ConvTranspose2d(64,64,(5,5))
         self.gate = GateModule()
 
     def forward(self,x):
-        # dct_y = dct_y.reshape((-1,64,8,8))
-        # dct_cr = dct_cr.reshape((-1,64,8,8))
-        # dct_cb = dct_cb.reshape((-1,64,8,8))
+        #shape would change best on input size
+        #tiny-image-net: (-1,192,8,8)
+        #imagenette-160: (-1,192,12,12)
+        #imagenette-320: (-1,192,40,40)
         x = x.reshape(-1,192,40,40)
-        # dct_cb = self.deconv(dct_cb)
-        # dct_cr = self.deconv(dct_cr)
-        # print(dct_y.size())
-        # print(dct_cb.size())
-        # print(dct_cr.size())
-
-        #x = torch.cat((dct_y,dct_cb,dct_cr),dim=1)
         x,channels = self.gate(x)
         x = self.model(x)
         x = x.reshape(x.size(0),-1)
